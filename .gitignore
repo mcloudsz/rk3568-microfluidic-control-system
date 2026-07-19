@@ -1,0 +1,29 @@
+# Application build outputs
+/app/build/
+*.o
+*.a
+*.so
+*.elf
+*.bin
+
+# Kernel module build outputs
+*.ko
+*.mod
+*.mod.c
+.*.cmd
+Module.symvers
+modules.order
+
+# Debug and generated data
+*.rgb
+*.log
+
+# Editor files
+.vscode/
+.idea/
+*.swp
+*~
+
+# System files
+.DS_Store
+Thumbs.db
