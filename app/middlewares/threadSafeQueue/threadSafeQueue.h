@@ -25,16 +25,19 @@ public:
         _cv.notify_one();
     }
 
-    T pop() {
+    T pop() 
+    {
         std::unique_lock<std::mutex> lock(_mtx);
-        _cv.wait(lock, [this]{ return _size > 0; });
-        if(_closed)
-            return T{};  // 关闭时, 返回一个默认值
+
+        _cv.wait(lock, [this]{ return _closed || _size > 0; });
+
+        if (_closed && _size == 0)
+            return T{};
 
         T item = _q.front();
         _q.pop_front();
         _size--;
-        
+
         _cv.notify_one();
         return item;
     }

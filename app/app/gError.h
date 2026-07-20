@@ -13,3 +13,4 @@ inline std::atomic<bool> resetFlag{false};
 
 // 背景图重新采集通知
 inline std::atomic<bool> needReinit{false};   // 通知 frameProc 重置背景帧
+

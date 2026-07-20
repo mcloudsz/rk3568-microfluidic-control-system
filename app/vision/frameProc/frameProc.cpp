@@ -1,5 +1,4 @@
 #include "frameProc.h"
-
 #define TOTAL_INIT_FRAME_NUM 10
 #define THRESHOLD_VAL 30          // 小于这个值的像素点会被当做噪声处理
 #define SAMPLE_THRESHOLD_ENTER 80   // 大于这个值会被认作 ENTER 的开始
@@ -75,9 +74,9 @@ void frameProc::filterBubblePixels(const cv::Mat& currentRoi, cv::Mat& mask)
 
             const cv::Vec3b& pixel = rgbRow[x];
 
-            int r = pixel[0];
+            int b = pixel[0];
             int g = pixel[1];
-            int b = pixel[2];
+            int r = pixel[2];
 
             int maxChannel = std::max({r, g, b});
             int minChannel = std::min({r, g, b});
@@ -109,7 +108,7 @@ int frameProc::cvProc(const cv::Mat& currentRoi)
 
     // 计算 diffRoi 的灰度图
     cv::Mat diffGray;
-    cv::cvtColor(diffRoi, diffGray, cv::COLOR_RGB2GRAY);
+    cv::cvtColor(diffRoi, diffGray, cv::COLOR_BGR2GRAY);
 
     // 根据灰度图 diffGray 计算二值化掩码图 mask
     cv::Mat mask;
@@ -150,7 +149,7 @@ int frameProc::cvProc(const cv::Mat& currentRoi)
                 // 获取白色点区域的 RGB 三通道均值
                 // 我们只关心 R 通道 [0] 和 B 通道 [2]
                 cv::Scalar meanVal = cv::mean(currentRoi, mask);
-                double c = (meanVal[0] - meanVal[2]) / (meanVal[0] + meanVal[2] + 0.0001);
+                double c = (meanVal[2] - meanVal[0]) / (meanVal[2] + meanVal[0] + 0.0001);
                 _sumc += c; // 累加 c
                 _sumcSquare += c * c; 
 
@@ -193,7 +192,7 @@ int frameProc::cvProc(const cv::Mat& currentRoi)
             info.size = _dropletFrameCount;
             info.mean = avec;
             info.variance = varc;
-            _infoQueue.push(info);  // 值拷贝
+            _infoQueue.push(info); // 值拷贝
 
             cvProcReset();
             break;
@@ -226,7 +225,8 @@ void frameProc::frameProcLoop()
         {
             // 从 inQueue 中获取处理好的帧
             dmaHeapBuffer* pBuf = _inQueue.pop();
-            
+            if (pBuf == nullptr)
+                break;
             // 只会执行一次
             static int width = pBuf->getWidth();
             static int height = pBuf->getHeight();
@@ -276,4 +276,6 @@ void frameProc::stop()
             _workerThread.join();
     }
 }
+
+
 

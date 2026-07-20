@@ -2,33 +2,32 @@
 
 int dmaHeap::dmaBufferAlloc(int size)
 {
-    if(size == 0)
-    {
+    if (size == 0) {
         std::cout << "size can not be 0" << std::endl;
         return -1;
     }
 
     int fd = open(DMA_HEAP_PATH, O_RDWR | O_CLOEXEC);
-    if (fd < 0) 
-    {
+    if (fd < 0) {
         std::cout << "dma buffer alloc failed. path is:" << DMA_HEAP_PATH << std::endl;
         return -1;
     }
 
-    struct dma_heap_allocation_data data = {
-        .len = size,
-        .fd_flags = O_RDWR | O_CLOEXEC,
-    };
+    struct dma_heap_allocation_data data;
+    memset(&data, 0, sizeof(data));
 
-    if (ioctl(fd, DMA_HEAP_IOCTL_ALLOC, &data) < 0) 
-    {
+    data.len = size;
+    data.fd_flags = O_RDWR | O_CLOEXEC;
+    data.heap_flags = 0;
+
+    if (ioctl(fd, DMA_HEAP_IOCTL_ALLOC, &data) < 0) {
         std::cout << "dma buffer ioctl failed. path is:" << DMA_HEAP_PATH << std::endl;
         close(fd);
         return -1;
     }
 
     close(fd);
-    return data.fd; 
+    return data.fd;
 }
 
 void* dmaHeap::dmaBufferMmap(int fd, int size)
@@ -90,25 +89,35 @@ void* dmaHeap::dmaHeapGetPtr() const
 
 int dmaHeapBuffer::calcSize(RgaSURF_FORMAT fmt, int srcWidth, int srcHeight)
 {
-    if(fmt == RK_FORMAT_YVYU_422 || fmt == RK_FORMAT_YUYV_422)
+    if (fmt == RK_FORMAT_YVYU_422 || fmt == RK_FORMAT_YUYV_422)
         return srcWidth * srcHeight * 2;
-    else if(fmt == RK_FORMAT_YCbCr_420_SP)
-        return srcWidth * srcHeight * 3 / 2;
-    else if(fmt == RK_FORMAT_RGB_888)
+
+    else if (fmt == RK_FORMAT_RGB_888 || fmt == RK_FORMAT_BGR_888)
         return srcWidth * srcHeight * 3;
-    else 
+
+    else if (fmt == RK_FORMAT_YCbCr_420_SP)
+        return srcWidth * srcHeight * 3 / 2;
+
+    else
         return 0;
 }
 
 void dmaHeapBuffer::v4l2BufferSet()
 {
-    _v4l2Buffer.index = _index;
-    _v4l2Buffer.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
-    _v4l2Buffer.memory = V4L2_MEMORY_DMABUF;
-    _v4l2Buffer.m.fd = _dmaHeapInfo.dmaHeapGetFd();
-    _v4l2Buffer.length = calcSize(_fmt, _srcWidth, _srcHeight);
-}
+    memset(&_v4l2Buffer, 0, sizeof(_v4l2Buffer));
+    memset(_v4l2Planes, 0, sizeof(_v4l2Planes));
 
+    _v4l2Buffer.index = _index;
+    _v4l2Buffer.type = V4L2_BUF_TYPE_VIDEO_CAPTURE_MPLANE;
+    _v4l2Buffer.memory = V4L2_MEMORY_DMABUF;
+    _v4l2Buffer.length = 1;
+    _v4l2Buffer.m.planes = _v4l2Planes;
+
+    _v4l2Planes[0].m.fd = _dmaHeapInfo.dmaHeapGetFd();
+    _v4l2Planes[0].length = calcSize(_fmt, _srcWidth, _srcHeight);
+    _v4l2Planes[0].bytesused = 0;
+    _v4l2Planes[0].data_offset = 0;
+}
 
 dmaHeapBuffer::dmaHeapBuffer(RgaSURF_FORMAT fmt, int srcWidth, int srcHeight, int index)
     :_dmaHeapInfo(calcSize(fmt, srcWidth, srcHeight)),
@@ -129,8 +138,18 @@ dmaHeapBuffer::dmaHeapBuffer(RgaSURF_FORMAT fmt, int srcWidth, int srcHeight, in
         throw std::runtime_error("dma heap buffer import rga fd failed");
     
     _rgaHandle = rgaHandle;
-    memset(&_v4l2Buffer, 0, sizeof(_v4l2Buffer));
+    // memset(&_v4l2Buffer, 0, sizeof(_v4l2Buffer));
     v4l2BufferSet();
+}
+
+int dmaHeapBuffer::getFd() const
+{
+    return _dmaHeapInfo.dmaHeapGetFd();
+}
+
+int dmaHeapBuffer::getSize() const
+{
+    return calcSize(_fmt, _srcWidth, _srcHeight);
 }
 
 dmaHeapBuffer::~dmaHeapBuffer()
@@ -167,3 +186,4 @@ struct v4l2_buffer* dmaHeapBuffer::getV4l2Ptr()
 {
     return &_v4l2Buffer;
 }
+

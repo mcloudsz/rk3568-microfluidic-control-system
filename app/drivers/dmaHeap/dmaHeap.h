@@ -1,6 +1,5 @@
 #pragma once
 
-#include <linux/dma-heap.h>
 #include <sys/ioctl.h>
 #include <sys/mman.h>
 #include <linux/videodev2.h>
@@ -13,7 +12,7 @@
 #include <rga.h>
 #include <cstddef>
 #include <im2d.h> 
-
+#include "dma_heap_compat.h"
 #define DMA_HEAP_PATH "/dev/dma_heap/linux,cma"
 
 class dmaHeap{
@@ -32,24 +31,32 @@ class dmaHeap{
 };
 
 class dmaHeapBuffer{
-    private:
-        dmaHeap _dmaHeapInfo;  
-        int _srcWidth;   
-        int _srcHeight;   
-        RgaSURF_FORMAT _fmt;
-        int _index;
-        rga_buffer_handle_t _rgaHandle; 
-        int calcSize(RgaSURF_FORMAT fmt, int srcWidth, int srcHeight);
-        struct v4l2_buffer _v4l2Buffer;
-        void v4l2BufferSet();
+private:
+    dmaHeap _dmaHeapInfo;
+    int _srcWidth;
+    int _srcHeight;
+    RgaSURF_FORMAT _fmt;
+    int _index;
+    rga_buffer_handle_t _rgaHandle;
 
-    public:
-        dmaHeapBuffer(RgaSURF_FORMAT fmt, int srcWidth, int srcHeight, int index);
-        ~dmaHeapBuffer();
-        rga_buffer_handle_t getBufferHandle() const;
-        int getWidth() const;
-        int getHeight() const;
-        RgaSURF_FORMAT getFmt() const;
-        void* getPtr() const;
-        struct v4l2_buffer* getV4l2Ptr();
+    struct v4l2_buffer _v4l2Buffer;
+    struct v4l2_plane _v4l2Planes[VIDEO_MAX_PLANES];
+
+    static int calcSize(RgaSURF_FORMAT fmt, int srcWidth, int srcHeight);
+    void v4l2BufferSet();
+
+public:
+    dmaHeapBuffer(RgaSURF_FORMAT fmt, int srcWidth, int srcHeight, int index);
+    ~dmaHeapBuffer();
+
+    rga_buffer_handle_t getBufferHandle() const;
+    int getWidth() const;
+    int getHeight() const;
+    RgaSURF_FORMAT getFmt() const;
+    void* getPtr() const;
+
+    int getFd() const;
+    int getSize() const;
+
+    struct v4l2_buffer* getV4l2Ptr();
 };

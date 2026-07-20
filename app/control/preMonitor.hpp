@@ -174,7 +174,7 @@ private:
             while(_isRunning)
             {
                 // 阻塞在 IIO 事件上
-                ret = poll(pollFds, 2, -1);
+                ret = poll(pollFds, 2, IIO_EVENT_POLL_TIMEOUT_MS);
                 if(ret < 0)  // poll 失败
                 {
                     close(_eventFd);

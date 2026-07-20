@@ -17,8 +17,8 @@
 
 // 比例环参数
 #define RATIO_SETPOINT 0.0f
-#define RATIO_KP 20.0f
-#define RATIO_KI 5.0f
+#define RATIO_KP 22.4f
+#define RATIO_KI 5.1f
 #define RATIO_CONVERGE_THRESH 0.05f
 
 // 均匀度环参数（等比例缩放两泵总频率）
@@ -449,7 +449,9 @@ public:
                     continue;  // 触发复位之后直接 doReset. 后续这个线程会阻塞在 _inQueue.pop() 上.
                 }
                 dropletInfo info = _inQueue.pop();
-
+                if (!_isRunning)
+                    break; 
+                             
                 // 在前一次 PI 控制指令下发 - 这一轮液滴出现在视窗内. PI 会被冻结
                 if (_piFrozen)
                 {
