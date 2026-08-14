@@ -126,7 +126,7 @@ RGA 输入端直接使用 V4L2 采集阶段分配的 DMA-BUF，不需要将 NV12
 `frameProc` 线程从 `processedFrameQueue` 获取 RGA 转换后的 BGR 图像，对目标区域内的液滴状态进行分析，并将结果封装为 `dropletInfo` 写入 `dropletInfoQueue`，供液路控制线程使用。
 
 图像处理流程如下：
-1. 在系统初始化时，先开启缓冲液的阀门，在管道内部充满了蓝色缓冲液时，采集 10 帧 RGB 图像取均值作为 background_ROI。
+1. 在系统初始化时，采集 10 帧 RGB 图像取均值作为 background_ROI。
 2. 将当前帧的 current_ROI 与 background_ROI 求绝对差值，超过设定阈值即判定为前景（白），否则为背景（黑），生成二值化的掩码 mask。
 3. 在 mask 中针对原像素图作气泡剔除的处理，得到剔除气泡之后的 mask。
 4. 在裁剪区域内利用掩码中白色像素的数量触发状态切换。
