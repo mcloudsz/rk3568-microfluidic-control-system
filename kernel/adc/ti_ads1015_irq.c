@@ -1005,7 +1005,8 @@ static irqreturn_t ads1115_event_irq_thread(int irq, void *dev_id)
 	dir = data->comp_mode == ADS1015_CFG_COMP_MODE_TRAD ? IIO_EV_DIR_RISING : IIO_EV_DIR_EITHER;
 	
 	// 上报 IIO 事件
-	iio_push_event(indio_dev, IIO_UNMOD_EVENT_CODE(IIO_VOLTAGE, ch, IIO_EV_TYPE_THRESH, dir), iio_get_time_ns(indio_dev));
+	iio_push_event(indio_dev, IIO_UNMOD_EVENT_CODE(IIO_VOLTAGE, indio_dev->channels[ch].channel,
+		IIO_EV_TYPE_THRESH, dir), iio_get_time_ns(indio_dev));
 
 	// 睡眠 10s. 在这 10s 中泵会冲洗, 由于比较器被关闭, 这 10s 中的压力不会触发中断
 	msleep(ADS1115_EVENT_SUPPRESS_MS);

@@ -493,7 +493,10 @@ static int rk_pump_probe(struct platform_device *pdev)
             dev_err(dev, "failed to get gpio(%s)\n", of_resources[i].dir_gpio_id);
             return dev_err_probe(dev, PTR_ERR(dir_gpio), "failed to get gpio(%s)\n", of_resources[i].dir_gpio_id);
         }
-        pump_descs[i].pump_dir_gpio = dir_gpio;
+        if (of_resources[i].type == MOTOR_TYPE_DC)
+            pump_descs[i].pump_neg_gpio = dir_gpio;
+        else
+            pump_descs[i].pump_dir_gpio = dir_gpio;
 
         // 获取电磁阀 gpio 资源.
         struct gpio_desc * valve_gpio = devm_gpiod_get(dev, of_resources[i].valve_gpio_id, GPIOD_OUT_LOW);
